@@ -66,7 +66,7 @@ class MBConv(nn.Module):
 
         x = nn.Conv(features=self.features, kernel_size=(1,1), strides=(1,1))(x)
         if self.dropout_rate:
-            x = nn.Dropout(rate=self.dropout_rate)(x)
+            x = nn.Dropout(rate=self.dropout_rate)(x, deterministic=not train)
 
         return res + x
 
@@ -119,7 +119,7 @@ class RelativeMultiHeadSelfAttention(nn.Module):
         pos_bias = jnp.expand_dims(pos_bias, 0)
         attn = nn.softmax(score + pos_bias, axis=-1)
         if self.dropout_rate:
-            attn = nn.Dropout(rate=self.dropout_rate)(attn)
+            attn = nn.Dropout(rate=self.dropout_rate)(attn, deterministic=not train)
         attn = jnp.matmul(attn, v)
 
         out = attn.transpose(0, 2, 1, 3)
@@ -162,10 +162,10 @@ class ConvTransformer(nn.Module):
         x = nn.Dense(hidden_dim)(x)
         x = self.activation(x)
         if self.dropout_rate:
-            x = nn.Dropout(self.dropout_rate)(x)
+            x = nn.Dropout(self.dropout_rate)(x, deterministic=not train)
         x = nn.Dense(out.shape[-1])(x)
         if self.dropout_rate:
-            x = nn.Dropout(self.dropout_rate)(x)
+            x = nn.Dropout(self.dropout_rate)(x, deterministic=not train)
 
         return x + out
 
@@ -203,7 +203,7 @@ class CoAtNet(nn.Module):
 
         x = jnp.mean(x, axis=(1,2)) # assuming (batch, height, width, channels)
         if self.dropout_rate > 0:
-            x = nn.Dropout(self.dropout_rate)(x)
+            x = nn.Dropout(self.dropout_rate)(x, deterministic=not train)
         x = nn.Dense(self.num_classes)(x)
 
         return x
